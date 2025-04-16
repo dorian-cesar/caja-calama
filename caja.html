@@ -11,6 +11,26 @@
             background-color: #1c1c1c;
             color: white;
         }
+        
+        #volver {
+            position: fixed;
+            right: 400px;
+            top: 20px;           
+            padding: 10px 20px;
+            background-color: #4CAF50; /* Color verde */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
+            z-index: 1000;
+        }
+
+        #volver:hover {
+            background-color: #45a049; /* Color verde más oscuro al pasar el mouse */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
 
         .form-control,
         .btn {
@@ -48,8 +68,9 @@
 </head>
 
 <body class="container py-5">
+    <a href="https://andenes.terminal-calama.com/parkingCalama/?#" id="volver" class="btn">Volver</a> 
     <h1 class="mb-4">Control de Caja</h1>
-
+    
     <button class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#modalInicio" id="btnAbrirCaja">Abrir Caja</button>
     <button id="btnCerrarCaja" class="btn btn-danger mb-4">Cerrar Caja</button>
     <button id="btnImprimir" class="btn btn-secondary mb-4">Imprimir Resumen</button>
