@@ -163,6 +163,82 @@ class UIStateManager {
     }
 }
 
+// --- Funciones para Movimientos en Tiempo Real ---
+function cargarMovimientosCaja(idCaja) {
+    $.post('caja.php', { accion: 'obtener_movimientos', id_caja: idCaja })
+        .done(function(res) {
+            let data;
+            try {
+                data = JSON.parse(res);
+            } catch (e) {
+                console.error('Error parseando movimientos:', e);
+                return;
+            }
+            
+            if (data.success) {
+                // Actualizar la tabla con los movimientos
+                actualizarTablaConMovimientos(data);
+                // Actualizar las estadísticas
+                actualizarEstadisticas(data);
+            } else {
+                console.error('Error en movimientos:', data.error);
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.error('Error al cargar movimientos:', error);
+        });
+}
+
+function actualizarTablaConMovimientos(movimientos) {
+    // Obtener los datos básicos de la caja actual
+    const id = localStorage.getItem('id_caja');
+    const fecha = $('#tablaCaja tbody tr td:first-child').text().replace('📅 ', '') || new Date().toISOString().split('T')[0];
+    const horaInicio = $('#tablaCaja tbody tr td:nth-child(2)').text().replace('⏰ ', '') || new Date().toLocaleTimeString('es-CL');
+    const montoInicialText = $('#statMontoInicial').text().replace('$', '').replace(/\./g, '') || '0';
+    const monto_inicial = parseFloat(montoInicialText) || 0;
+    
+    const monto_bano = parseFloat(movimientos.monto_bano || 0);
+    const monto_custodia = parseFloat(movimientos.monto_custodia || 0);
+    const monto_parking = parseFloat(movimientos.monto_parking || 0);
+    const monto_andenes = parseFloat(movimientos.monto_andenes || 0);
+    const total = monto_inicial + monto_bano + monto_custodia + monto_parking + monto_andenes;
+
+    const estadoBadge = '<span class="badge badge-abierta"><i class="fas fa-play-circle me-1"></i>Abierta</span>';
+
+    $('#tablaCaja tbody').html(`
+        <tr>
+            <td><i class="fas fa-calendar text-gray-400 me-2"></i>${fecha}</td>
+            <td><i class="fas fa-clock text-gray-400 me-2"></i>${horaInicio}</td>
+            <td><i class="fas fa-clock text-gray-400 me-2"></i>-</td>
+            <td><strong>$${UIStateManager.formatCurrency(monto_inicial)}</strong></td>
+            <td>$${UIStateManager.formatCurrency(monto_bano)}</td>
+            <td>$${UIStateManager.formatCurrency(monto_custodia)}</td>
+            <td>$${UIStateManager.formatCurrency(monto_parking)}</td>
+            <td>$${UIStateManager.formatCurrency(monto_andenes)}</td>
+            <td><strong class="text-success">$${UIStateManager.formatCurrency(total)}</strong></td>
+            <td>${estadoBadge}</td>
+        </tr>
+    `);
+    
+    $('#noDataRow').hide();
+    $('#registrosCount').text('1 registro');
+}
+
+function actualizarEstadisticas(movimientos) {
+    const monto_inicial = parseFloat($('#statMontoInicial').text().replace('$', '').replace(/\./g, '') || 0);
+    const total = monto_inicial + 
+                 parseFloat(movimientos.monto_bano || 0) + 
+                 parseFloat(movimientos.monto_custodia || 0) + 
+                 parseFloat(movimientos.monto_parking || 0) + 
+                 parseFloat(movimientos.monto_andenes || 0);
+    
+    $('#statBanos').text(`$${UIStateManager.formatCurrency(movimientos.monto_bano || 0)}`);
+    $('#statCustodia').text(`$${UIStateManager.formatCurrency(movimientos.monto_custodia || 0)}`);
+    $('#statParking').text(`$${UIStateManager.formatCurrency(movimientos.monto_parking || 0)}`);
+    $('#statAndenes').text(`$${UIStateManager.formatCurrency(movimientos.monto_andenes || 0)}`);
+    $('#statTotal').text(`$${UIStateManager.formatCurrency(total)}`);
+}
+
 // --- Funciones Principales ---
 function mostrarCaja(data) {
     const monto_bano = parseFloat(data.monto_bano || 0);
@@ -261,6 +337,10 @@ function cargarEstadoCaja() {
                 if (data.success) {
                     mostrarCaja(data);
                     UIStateManager.updateCajaStatus(true, data);
+                    
+                    // CARGAR MOVIMIENTOS EN TIEMPO REAL
+                    cargarMovimientosCaja(id);
+                    
                 } else {
                     // Si la caja no existe en el servidor, limpiar localStorage
                     localStorage.removeItem('id_caja');
@@ -307,6 +387,10 @@ $('#formInicioCaja').on('submit', function (e) {
                 localStorage.setItem('id_caja', data.id);
                 mostrarCaja(data);
                 UIStateManager.updateCajaStatus(true, data);
+                
+                // CARGAR MOVIMIENTOS INICIALES
+                cargarMovimientosCaja(data.id);
+                
                 $('#modalInicio').modal('hide');
                 ToastSystem.show('Caja abierta correctamente', 'success');
                 $('#formInicioCaja')[0].reset();
@@ -387,12 +471,20 @@ $(document).ready(function () {
     // Cargar estado inicial de la caja
     cargarEstadoCaja();
     
-    // Configurar auto-refresh cada 30 segundos si hay caja abierta
+    // Configurar auto-refresh cada 10 segundos para movimientos si hay caja abierta
+    setInterval(() => {
+        if (localStorage.getItem('id_caja')) {
+            const id = localStorage.getItem('id_caja');
+            cargarMovimientosCaja(id);
+        }
+    }, 10000); // Cada 10 segundos para movimientos en tiempo real
+    
+    // Configurar auto-refresh completo cada 30 segundos
     setInterval(() => {
         if (localStorage.getItem('id_caja')) {
             cargarEstadoCaja();
         }
-    }, 30000);
+    }, 30000); // Cada 30 segundos para refresh completo
     
     // Mejorar la experiencia del formulario
     $('#monto_inicial_modal').on('focus', function() {

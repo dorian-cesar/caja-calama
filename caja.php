@@ -40,6 +40,57 @@ elseif ($accion === 'mostrar') {
         echo json_encode(["success" => false, "error" => "Caja no encontrada"]);
     }
 }
+
+elseif ($accion === 'obtener_movimientos') {
+    $id = $_POST['id_caja'];
+    
+    // --- Conexión a esquema restroom ---
+    $mysqli_restroom = new mysqli($server, $user, $pass, 'restroom');
+    if ($mysqli_restroom->connect_error) {
+        echo json_encode(["success" => false, "error" => "Error al conectar con esquema restroom"]);
+        exit;
+    }
+
+    // Total baños
+    $stmt_bano = $mysqli_restroom->prepare("SELECT SUM(valor) AS total_bano FROM restroom WHERE id_caja = ?");
+    $stmt_bano->bind_param("i", $id);
+    $stmt_bano->execute();
+    $monto_bano = $stmt_bano->get_result()->fetch_assoc()['total_bano'] ?? 0;
+    $stmt_bano->close();
+
+    // Total custodia
+    $stmt_cust = $mysqli_restroom->prepare("SELECT SUM(valor) AS total_custodia FROM custodias WHERE id_caja = ?");
+    $stmt_cust->bind_param("i", $id);
+    $stmt_cust->execute();
+    $monto_custodia = $stmt_cust->get_result()->fetch_assoc()['total_custodia'] ?? 0;
+    $stmt_cust->close();
+
+    $mysqli_restroom->close();
+
+    // --- Parking y Andenes ---
+    // Parking
+    $stmt_parking = $mysqli->prepare("SELECT SUM(valor) AS total_parking FROM movParking WHERE id_caja = ? AND tipo = 'Parking'");
+    $stmt_parking->bind_param("i", $id);
+    $stmt_parking->execute();
+    $monto_parking = $stmt_parking->get_result()->fetch_assoc()['total_parking'] ?? 0;
+    $stmt_parking->close();
+
+    // Andenes
+    $stmt_anden = $mysqli->prepare("SELECT SUM(valor) AS total_anden FROM movParking WHERE id_caja = ? AND tipo = 'Anden'");
+    $stmt_anden->bind_param("i", $id);
+    $stmt_anden->execute();
+    $monto_andenes = $stmt_anden->get_result()->fetch_assoc()['total_anden'] ?? 0;
+    $stmt_anden->close();
+
+    echo json_encode([
+        "success" => true,
+        "monto_bano" => $monto_bano,
+        "monto_custodia" => $monto_custodia,
+        "monto_parking" => $monto_parking,
+        "monto_andenes" => $monto_andenes
+    ]);
+}
+
 elseif ($accion === 'cerrar') {
     $id = $_POST['id_caja'];
     $hora_cierre = date("H:i:s");
