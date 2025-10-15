@@ -1,8 +1,8 @@
 // --- Configuración de entorno ---
 const ENV = "dev";
 const URLS = {
-    dev: "http://localhost/parkingCalama/?#",
-    prod: "https://andenes.terminal-calama.com/parkingCalama/?#"
+    dev: "http://localhost/parkingCalama/",
+    prod: "https://andenes.terminal-calama.com/parkingCalama/"
 };
 const VOLVER_URL = URLS[ENV];
 $('#volver').attr('href', VOLVER_URL);
@@ -101,7 +101,7 @@ class UIStateManager {
         const monto_bano = parseFloat(data.monto_bano || 0);
         const monto_custodia = parseFloat(data.monto_custodia || 0);
         const monto_parking = parseFloat(data.monto_parking || 0);
-        const monto_andenes = parseFloat(data.monyo_andenes || 0);
+        const monto_andenes = parseFloat(data.monto_andenes || 0);
         const monto_inicial = parseFloat(data.monto_inicial || 0);
         const total = monto_inicial + monto_bano + monto_custodia + monto_parking + monto_andenes;
         
@@ -168,7 +168,7 @@ function mostrarCaja(data) {
     const monto_bano = parseFloat(data.monto_bano || 0);
     const monto_custodia = parseFloat(data.monto_custodia || 0);
     const monto_parking = parseFloat(data.monto_parking || 0);
-    const monto_andenes = parseFloat(data.monyo_andenes || 0);
+    const monto_andenes = parseFloat(data.monto_andenes || 0);
     const monto_inicial = parseFloat(data.monto_inicial || 0);
     const total = monto_inicial + monto_bano + monto_custodia + monto_parking + monto_andenes;
     

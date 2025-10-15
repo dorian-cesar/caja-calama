@@ -79,12 +79,12 @@ elseif ($accion === 'cerrar') {
     $stmt_anden = $mysqli->prepare("SELECT SUM(valor) AS total_anden FROM movParking WHERE id_caja = ? AND tipo = 'Anden'");
     $stmt_anden->bind_param("i", $id);
     $stmt_anden->execute();
-    $monyo_andenes = $stmt_anden->get_result()->fetch_assoc()['total_anden'] ?? 0;
+    $monto_andenes = $stmt_anden->get_result()->fetch_assoc()['total_anden'] ?? 0;
     $stmt_anden->close();
 
     // --- Update de caja ---
-    $stmt = $mysqli->prepare("UPDATE caja SET hora_cierre = ?, estado = 'cerrada', monto_bano = ?, monto_custodia = ?, monto_parking = ?, monyo_andenes = ? WHERE id = ?");
-    $stmt->bind_param("siiiii", $hora_cierre, $monto_bano, $monto_custodia, $monto_parking, $monyo_andenes, $id);
+    $stmt = $mysqli->prepare("UPDATE caja SET hora_cierre = ?, estado = 'cerrada', monto_bano = ?, monto_custodia = ?, monto_parking = ?, monto_andenes = ? WHERE id = ?");
+    $stmt->bind_param("siiiii", $hora_cierre, $monto_bano, $monto_custodia, $monto_parking, $monto_andenes, $id);
     if ($stmt->execute()) {
         $result = $mysqli->query("SELECT * FROM caja WHERE id = $id");
         $row = $result->fetch_assoc();
