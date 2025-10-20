@@ -13,26 +13,32 @@ if ($accion === 'abrir') {
     $hora = date("H:i:s");
     $monto_inicial = $_POST['monto_inicial'];
     $id_usuario = isset($_POST['id_usuario']) ? intval($_POST['id_usuario']) : null;
+    $numero_caja = $_POST['numero_caja'] ?? null;
 
     if (!$id_usuario) {
         echo json_encode(["success" => false, "error" => "Falta el id_usuario"]);
         exit;
     }
 
-    // 1️⃣ Verificar si ya existe una caja abierta para este usuario
+    if (!$numero_caja) {
+        echo json_encode(["success" => false, "error" => "Falta el numero_caja"]);
+        exit;
+    }
+
+    // 1️⃣ Verificar si ya existe una caja abierta para este usuario en ESTE TERMINAL
     $stmt_check = $mysqli->prepare("
         SELECT * 
         FROM caja 
-        WHERE id_usuario = ? AND estado = 'abierta' 
+        WHERE id_usuario = ? AND numero_caja = ? AND estado = 'abierta' 
         ORDER BY id DESC 
         LIMIT 1
     ");
-    $stmt_check->bind_param("i", $id_usuario);
+    $stmt_check->bind_param("is", $id_usuario, $numero_caja);
     $stmt_check->execute();
     $result = $stmt_check->get_result();
 
     if ($result->num_rows > 0) {
-        // 2️⃣ Ya tiene una caja abierta → reutilizarla
+        // 2️⃣ Ya tiene una caja abierta en este terminal → reutilizarla
         $row = $result->fetch_assoc();
         echo json_encode([
             "success" => true,
@@ -42,12 +48,16 @@ if ($accion === 'abrir') {
             "hora_inicio" => $row["hora_inicio"],
             "monto_inicial" => $row["monto_inicial"],
             "estado" => $row["estado"],
-            "id_usuario" => $row["id_usuario"]
+            "id_usuario" => $row["id_usuario"],
+            "numero_caja" => $row["numero_caja"]
         ]);
     } else {
-        // 3️⃣ No existe → crear nueva caja
-        $stmt_insert = $mysqli->prepare("INSERT INTO caja (fecha, hora_inicio, monto_inicial, estado, id_usuario) VALUES (?, ?, ?, 'abierta', ?)");
-        $stmt_insert->bind_param("ssdi", $fecha, $hora, $monto_inicial, $id_usuario);
+        // 3️⃣ No existe → crear nueva caja en este terminal
+        $stmt_insert = $mysqli->prepare("
+            INSERT INTO caja (fecha, hora_inicio, monto_inicial, estado, id_usuario, numero_caja) 
+            VALUES (?, ?, ?, 'abierta', ?, ?)
+        ");
+        $stmt_insert->bind_param("ssdis", $fecha, $hora, $monto_inicial, $id_usuario, $numero_caja);
 
         if ($stmt_insert->execute()) {
             $id = $stmt_insert->insert_id;
@@ -59,7 +69,8 @@ if ($accion === 'abrir') {
                 "hora_inicio" => $hora,
                 "monto_inicial" => $monto_inicial,
                 "estado" => "abierta",
-                "id_usuario" => $id_usuario
+                "id_usuario" => $id_usuario,
+                "numero_caja" => $numero_caja
             ]);
         } else {
             echo json_encode(["success" => false, "error" => "No se pudo abrir caja."]);
