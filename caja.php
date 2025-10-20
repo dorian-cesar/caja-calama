@@ -20,7 +20,13 @@ if ($accion === 'abrir') {
     }
 
     // 1️⃣ Verificar si ya existe una caja abierta para este usuario
-    $stmt_check = $mysqli->prepare("SELECT * FROM caja WHERE id_usuario = ? AND estado = 'abierta' LIMIT 1");
+    $stmt_check = $mysqli->prepare("
+        SELECT * 
+        FROM caja 
+        WHERE id_usuario = ? AND estado = 'abierta' 
+        ORDER BY id DESC 
+        LIMIT 1
+    ");
     $stmt_check->bind_param("i", $id_usuario);
     $stmt_check->execute();
     $result = $stmt_check->get_result();
