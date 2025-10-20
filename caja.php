@@ -2,6 +2,8 @@
 
 include ('./conf.php');
 
+date_default_timezone_set("America/Santiago");
+
 if ($mysqli->connect_error) {
     die(json_encode(["success" => false, "error" => "Error de conexión"]));
 }
@@ -25,7 +27,7 @@ if ($accion === 'abrir') {
         exit;
     }
 
-    // 1️⃣ Verificar si ya existe una caja abierta para este usuario en ESTE TERMINAL
+    // Verificar caja abierta
     $stmt_check = $mysqli->prepare("
         SELECT * 
         FROM caja 
@@ -38,7 +40,6 @@ if ($accion === 'abrir') {
     $result = $stmt_check->get_result();
 
     if ($result->num_rows > 0) {
-        // 2️⃣ Ya tiene una caja abierta en este terminal → reutilizarla
         $row = $result->fetch_assoc();
         echo json_encode([
             "success" => true,
@@ -52,7 +53,6 @@ if ($accion === 'abrir') {
             "numero_caja" => $row["numero_caja"]
         ]);
     } else {
-        // 3️⃣ No existe → crear nueva caja en este terminal
         $stmt_insert = $mysqli->prepare("
             INSERT INTO caja (fecha, hora_inicio, monto_inicial, estado, id_usuario, numero_caja) 
             VALUES (?, ?, ?, 'abierta', ?, ?)
