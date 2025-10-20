@@ -14,31 +14,54 @@ if ($accion === 'abrir') {
     $monto_inicial = $_POST['monto_inicial'];
     $id_usuario = isset($_POST['id_usuario']) ? intval($_POST['id_usuario']) : null;
 
-    // Verificación básica
     if (!$id_usuario) {
         echo json_encode(["success" => false, "error" => "Falta el id_usuario"]);
         exit;
     }
 
-    $stmt = $mysqli->prepare("INSERT INTO caja (fecha, hora_inicio, monto_inicial, estado, id_usuario) VALUES (?, ?, ?, 'abierta', ?)");
-    $stmt->bind_param("ssdi", $fecha, $hora, $monto_inicial, $id_usuario);
+    // 1️⃣ Verificar si ya existe una caja abierta para este usuario
+    $stmt_check = $mysqli->prepare("SELECT * FROM caja WHERE id_usuario = ? AND estado = 'abierta' LIMIT 1");
+    $stmt_check->bind_param("i", $id_usuario);
+    $stmt_check->execute();
+    $result = $stmt_check->get_result();
 
-    if ($stmt->execute()) {
-        $id = $stmt->insert_id;
+    if ($result->num_rows > 0) {
+        // 2️⃣ Ya tiene una caja abierta → reutilizarla
+        $row = $result->fetch_assoc();
         echo json_encode([
             "success" => true,
-            "id" => $id,
-            "fecha" => $fecha,
-            "hora_inicio" => $hora,
-            "monto_inicial" => $monto_inicial,
-            "estado" => "abierta",
-            "id_usuario" => $id_usuario
+            "reutilizada" => true,
+            "id" => $row["id"],
+            "fecha" => $row["fecha"],
+            "hora_inicio" => $row["hora_inicio"],
+            "monto_inicial" => $row["monto_inicial"],
+            "estado" => $row["estado"],
+            "id_usuario" => $row["id_usuario"]
         ]);
     } else {
-        echo json_encode(["success" => false, "error" => "No se pudo abrir caja."]);
+        // 3️⃣ No existe → crear nueva caja
+        $stmt_insert = $mysqli->prepare("INSERT INTO caja (fecha, hora_inicio, monto_inicial, estado, id_usuario) VALUES (?, ?, ?, 'abierta', ?)");
+        $stmt_insert->bind_param("ssdi", $fecha, $hora, $monto_inicial, $id_usuario);
+
+        if ($stmt_insert->execute()) {
+            $id = $stmt_insert->insert_id;
+            echo json_encode([
+                "success" => true,
+                "reutilizada" => false,
+                "id" => $id,
+                "fecha" => $fecha,
+                "hora_inicio" => $hora,
+                "monto_inicial" => $monto_inicial,
+                "estado" => "abierta",
+                "id_usuario" => $id_usuario
+            ]);
+        } else {
+            echo json_encode(["success" => false, "error" => "No se pudo abrir caja."]);
+        }
+        $stmt_insert->close();
     }
 
-    $stmt->close();
+    $stmt_check->close();
 }
 
 elseif ($accion === 'mostrar') {
