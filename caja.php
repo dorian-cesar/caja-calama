@@ -12,9 +12,11 @@ if ($accion === 'abrir') {
     $fecha = date("Y-m-d");
     $hora = date("H:i:s");
     $monto_inicial = $_POST['monto_inicial'];
+    $numero_caja = $_POST['numero_caja'];
 
-    $stmt = $mysqli->prepare("INSERT INTO caja (fecha, hora_inicio, monto_inicial, estado) VALUES (?, ?, ?, 'abierta')");
-    $stmt->bind_param("ssd", $fecha, $hora, $monto_inicial);
+    $stmt = $mysqli->prepare("INSERT INTO caja (fecha, hora_inicio, monto_inicial, numero_caja, estado) VALUES (?, ?, ?, ?, 'abierta')");
+    $stmt->bind_param("ssds", $fecha, $hora, $monto_inicial, $numero_caja);
+
     if ($stmt->execute()) {
         $id = $stmt->insert_id;
         echo json_encode([
@@ -23,11 +25,13 @@ if ($accion === 'abrir') {
             "fecha" => $fecha,
             "hora_inicio" => $hora,
             "monto_inicial" => $monto_inicial,
+            "numero_caja" => $numero_caja,
             "estado" => "abierta"
         ]);
     } else {
         echo json_encode(["success" => false, "error" => "No se pudo abrir caja."]);
     }
+
     $stmt->close();
 }
 
