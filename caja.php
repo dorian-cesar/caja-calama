@@ -56,7 +56,7 @@ elseif ($accion === 'obtener_movimientos') {
     }
 
     // Total baños
-    $stmt_bano = $mysqli_restroom->prepare("SELECT SUM(valor) AS total_bano FROM restroom WHERE id_caja = ?");
+    $stmt_bano = $mysqli_restroom->prepare("SELECT SUM(valor) AS total_bano FROM restroomCalama WHERE id_caja = ?");
     $stmt_bano->bind_param("i", $id);
     $stmt_bano->execute();
     $monto_bano = $stmt_bano->get_result()->fetch_assoc()['total_bano'] ?? 0;
@@ -107,7 +107,7 @@ elseif ($accion === 'cerrar') {
     }
 
     // Total baños
-    $stmt_bano = $mysqli_restroom->prepare("SELECT SUM(valor) AS total_bano FROM restroom WHERE id_caja = ?");
+    $stmt_bano = $mysqli_restroom->prepare("SELECT SUM(valor) AS total_bano FROM restroomCalama WHERE id_caja = ?");
     $stmt_bano->bind_param("i", $id);
     $stmt_bano->execute();
     $monto_bano = $stmt_bano->get_result()->fetch_assoc()['total_bano'] ?? 0;
